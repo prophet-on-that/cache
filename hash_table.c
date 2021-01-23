@@ -13,6 +13,16 @@ struct key_t {
   uint8_t *key;
 };
 
+/* Create a new key_t by copying the given buffer */
+struct key_t *make_key_t(key_size_t size, uint8_t *buf) {
+  uint8_t *key_buf = malloc(sizeof(uint8_t) * size);
+  memcpy(key_buf, buf, size);
+  struct key_t *key = malloc(sizeof(struct key_t *));
+  key->key_size = size;
+  key->key = key_buf;
+  return key;
+}
+
 void free_key_t(struct key_t *key) {
   free(key->key);
   free(key);
@@ -22,6 +32,16 @@ typedef struct val_t {
   val_size_t val_size;
   uint8_t *val;
 } val_t;
+
+/* Create a new val_t by copying the given buffer */
+val_t *make_val_t(val_size_t size, uint8_t *buf) {
+  uint8_t *val_buf = malloc(sizeof(uint8_t) * size);
+  memcpy(val_buf, buf, size);
+  val_t *val = malloc(sizeof(val_t *));
+  val->val_size = size;
+  val->val = val_buf;
+  return val;
+}
 
 void free_val_t(val_t *val) {
   free(val->val);
@@ -73,10 +93,13 @@ bool cmp_keys(struct key_t *key, struct key_t *other) {
   return key->key_size == other->key_size && !memcmp(key->key, other->key, key->key_size);
 }
 
+bool cmp_vals(struct val_t *val, struct val_t *other) {
+  return val->val_size == other->val_size && !memcmp(val->val, other->val, val->val_size);
+}
+
 /*
  * Store a value for the given key in a hash table. The key and value
- * pointers are stored directly, not copied, and are considered as
- * owned by the hash table in future operations.
+ * pointers are COPIED.
  *
  * Returns 0 if new entry added, 1 if existing entry updated.
  */
@@ -87,11 +110,8 @@ int hash_table_put(hash_table_t *ht, struct key_t *key, val_t *val) {
     if (cmp_keys(key, elem->key)) {
       /* Update existing elem */
       /* Free existing key if different instance from current */
-      if (key != elem->key)
-        free_key_t(elem->key);
       free_val_t(elem->val);
-      elem->key = key;
-      elem->val = val;
+      elem->val = make_val_t(val->val_size, val->val);
       return 1;
     }
     ptr = &(*ptr)->next;
@@ -100,15 +120,17 @@ int hash_table_put(hash_table_t *ht, struct key_t *key, val_t *val) {
   elem = malloc(sizeof(list_t));
   assert(elem != 0);
   elem->next = 0;
-  elem->key = key;
-  elem->val = val;
+  elem->key = make_key_t(key->key_size, key->key);
+  elem->val = make_val_t(val->val_size, val->val);
   *ptr = elem;
   ++ht->item_count;
   return 0;
 }
 
 /*
- * Fetch pointer to value for a given key.
+ * Fetch pointer to value for a given key. This is a pointer to the
+ * data stored in the hash table, so must be copied if modification is
+ * needed.
  *
  * Returns 0 if nothing found.
  */
@@ -205,8 +227,7 @@ void test_put() {
   struct key_t *key = get_key(TEST_KEY);
   val_t *val = get_val(1);
   assert(hash_table_put(ht, key, val) == 0);
-  val_t *ret = hash_table_get(ht, key);
-  assert(val == ret);
+  assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
 }
 
@@ -217,8 +238,7 @@ void test_put_overwrite() {
   assert(hash_table_put(ht, key, val) == 0);
   val = get_val(2);
   assert(hash_table_put(ht, key, val) == 1);
-  val_t *ret = hash_table_get(ht, key);
-  assert(val == ret);
+  assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
 }
 
@@ -230,8 +250,8 @@ void test_put_conflict(void) {
   val_t *other_val = get_val(2);
   assert(hash_table_put(ht, key, val) == 0);
   assert(hash_table_put(ht, other_key, other_val) == 0);
-  assert(hash_table_get(ht, key) == val);
-  assert(hash_table_get(ht, other_key) == other_val);
+  assert(cmp_vals(hash_table_get(ht, key), val));
+  assert(cmp_vals(hash_table_get(ht, other_key), other_val));
   assert(ht->item_count == 2);
 }
 
@@ -242,7 +262,7 @@ void test_delete_not_present(void) {
   val_t *val = get_val(1);
   assert(hash_table_put(ht, key, val) == 0);
   assert(hash_table_delete(ht, other_key));
-  assert(hash_table_get(ht, key) == val);
+  assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
 }
 
@@ -259,7 +279,7 @@ void test_delete(void) {
   /* Delete key */
   assert(!hash_table_delete(ht, key));
   assert(!hash_table_get(ht, key));
-  assert(hash_table_get(ht, other_key) == other_val);
+  assert(cmp_vals(hash_table_get(ht, other_key), other_val));
   assert(ht->item_count == 1);
 
   /* Delete other_key */
