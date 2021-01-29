@@ -1,3 +1,8 @@
+/*
+ * Hash table implementation. The array size of the hash table is
+ * fixed. Not thread-safe.
+ */
+
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
