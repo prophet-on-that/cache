@@ -26,16 +26,16 @@ int min(int a, int b) {
 
 #define MSG_PUT 0
 
-void handle_msg(Conn *conn, hash_table_t *ht) {
-  struct key_t key;
-  val_t val;
+void handle_msg(Conn *conn, HashTable *ht) {
+  Key key;
+  Val val;
 
   switch(conn->msg_buf[0]) {
   case MSG_PUT:
     key.key_size = ntohs(conn->msg_buf[1]);
-    key.key = conn->msg_buf + 1 + sizeof(key_size_t);
-    val.val_size = ntohs(conn->msg_buf[1 + sizeof(key_size_t) + key.key_size]);
-    val.val = conn->msg_buf + 1 + sizeof(key_size_t) + key.key_size + sizeof(val_size_t);
+    key.key = conn->msg_buf + 1 + sizeof(KeySize);
+    val.val_size = ntohs(conn->msg_buf[1 + sizeof(KeySize) + key.key_size]);
+    val.val = conn->msg_buf + 1 + sizeof(KeySize) + key.key_size + sizeof(ValSize);
     hash_table_put(ht, &key, &val);
     /* TODO: send response */
     break;
@@ -47,7 +47,7 @@ void handle_msg(Conn *conn, hash_table_t *ht) {
 
 /* Handle incoming data for a client. Returns bytes consumed in
    buffer. */
-size_t recv_msg(Conn *conn, hash_table_t *ht, size_t buf_size, uint8_t *buf) {
+size_t recv_msg(Conn *conn, HashTable *ht, size_t buf_size, uint8_t *buf) {
   size_t outstanding_bytes, bytes_read;
   if (conn->msg_size) {
     outstanding_bytes = conn->msg_size - conn->bytes_received;

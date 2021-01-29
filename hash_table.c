@@ -11,46 +11,46 @@
 #include <stdio.h>
 #include "hash_table.h"
 
-/* Create a new key_t by copying the given buffer */
-struct key_t *make_key_t(key_size_t size, uint8_t *buf) {
+/* Create a new Key by copying the given buffer */
+Key *make_key(KeySize size, uint8_t *buf) {
   uint8_t *key_buf = malloc(sizeof(uint8_t) * size);
   memcpy(key_buf, buf, size);
-  struct key_t *key = malloc(sizeof(struct key_t *));
+  Key *key = malloc(sizeof(Key *));
   key->key_size = size;
   key->key = key_buf;
   return key;
 }
 
-void free_key_t(struct key_t *key) {
+void free_key(Key *key) {
   free(key->key);
   free(key);
 }
 
-/* Create a new val_t by copying the given buffer */
-val_t *make_val_t(val_size_t size, uint8_t *buf) {
+/* Create a new Val by copying the given buffer */
+Val *make_val(ValSize size, uint8_t *buf) {
   uint8_t *val_buf = malloc(sizeof(uint8_t) * size);
   memcpy(val_buf, buf, size);
-  val_t *val = malloc(sizeof(val_t *));
+  Val *val = malloc(sizeof(Val *));
   val->val_size = size;
   val->val = val_buf;
   return val;
 }
 
-void free_val_t(val_t *val) {
+void free_val(Val *val) {
   free(val->val);
   free(val);
 }
 
-void free_list_t(list_t *elem) {
-  free_key_t(elem->key);
-  free_val_t(elem->val);
+void free_list(List *elem) {
+  free_key(elem->key);
+  free_val(elem->val);
   free(elem);
 }
 
 /*
  * djb2 hash (see http://www.cse.yorku.ca/~oz/hash.html)
  */
-unsigned long hash(struct key_t *key) {
+unsigned long hash(Key *key) {
   unsigned long hash = 5381;
   for (unsigned int i = 0; i < key->key_size; i++)
     hash = ((hash << 5) + hash) + key->key[i]; /* hash * 33 + key->key[i] */
@@ -58,11 +58,11 @@ unsigned long hash(struct key_t *key) {
 }
 
 /* Construct a new hash table of fixed size SIZE. */
-hash_table_t *hash_table_new(unsigned int size) {
-  list_t **arr = malloc(sizeof(list_t *) * size);
+HashTable *hash_table_new(unsigned int size) {
+  List **arr = malloc(sizeof(List *) * size);
   assert(arr != 0);
   memset(arr, 0, size);
-  hash_table_t *ht = malloc(sizeof(hash_table_t));
+  HashTable *ht = malloc(sizeof(HashTable));
   assert(ht != 0);
   ht->size = size;
   ht->item_count = 0;
@@ -70,11 +70,11 @@ hash_table_t *hash_table_new(unsigned int size) {
   return ht;
 }
 
-bool cmp_keys(struct key_t *key, struct key_t *other) {
+bool cmp_keys(Key *key, Key *other) {
   return key->key_size == other->key_size && !memcmp(key->key, other->key, key->key_size);
 }
 
-bool cmp_vals(struct val_t *val, struct val_t *other) {
+bool cmp_vals(struct Val *val, struct Val *other) {
   return val->val_size == other->val_size && !memcmp(val->val, other->val, val->val_size);
 }
 
@@ -84,25 +84,25 @@ bool cmp_vals(struct val_t *val, struct val_t *other) {
  *
  * Returns 0 if new entry added, 1 if existing entry updated.
  */
-int hash_table_put(hash_table_t *ht, struct key_t *key, val_t *val) {
-  list_t **ptr = &ht->arr[hash(key) % ht->size];
-  list_t *elem;
+int hash_table_put(HashTable *ht, Key *key, Val *val) {
+  List **ptr = &ht->arr[hash(key) % ht->size];
+  List *elem;
   while (elem = *ptr) {
     if (cmp_keys(key, elem->key)) {
       /* Update existing elem */
       /* Free existing key if different instance from current */
-      free_val_t(elem->val);
-      elem->val = make_val_t(val->val_size, val->val);
+      free_val(elem->val);
+      elem->val = make_val(val->val_size, val->val);
       return 1;
     }
     ptr = &(*ptr)->next;
   }
   /* Append new list item */
-  elem = malloc(sizeof(list_t));
+  elem = malloc(sizeof(List));
   assert(elem != 0);
   elem->next = 0;
-  elem->key = make_key_t(key->key_size, key->key);
-  elem->val = make_val_t(val->val_size, val->val);
+  elem->key = make_key(key->key_size, key->key);
+  elem->val = make_val(val->val_size, val->val);
   *ptr = elem;
   ++ht->item_count;
   return 0;
@@ -115,9 +115,9 @@ int hash_table_put(hash_table_t *ht, struct key_t *key, val_t *val) {
  *
  * Returns 0 if nothing found.
  */
-val_t *hash_table_get(hash_table_t *ht, struct key_t *key) {
-  list_t **ptr = &ht->arr[hash(key) % ht->size];
-  list_t *elem;
+Val *hash_table_get(HashTable *ht, Key *key) {
+  List **ptr = &ht->arr[hash(key) % ht->size];
+  List *elem;
   while (elem = *ptr) {
     if (cmp_keys(key, elem->key))
       return elem->val;
@@ -131,13 +131,13 @@ val_t *hash_table_get(hash_table_t *ht, struct key_t *key) {
  *
  * Returns 0 on success, 1 if no elem deleted.
  */
-int hash_table_delete(hash_table_t *ht, struct key_t *key) {
- list_t **ptr = &ht->arr[hash(key) % ht->size];
- list_t *elem;
+int hash_table_delete(HashTable *ht, Key *key) {
+ List **ptr = &ht->arr[hash(key) % ht->size];
+ List *elem;
  while (elem = *ptr) {
    if (cmp_keys(key, elem->key)) {
      *ptr = elem->next;
-     free_list_t(elem);
+     free_list(elem);
      --ht->item_count;
      return 0;
    }
@@ -171,27 +171,27 @@ void run_tests() {
 }
 
 /* Construct a single-byte key */
-struct key_t *get_key(uint8_t n) {
+Key *get_key(uint8_t n) {
   uint8_t *buf = malloc(sizeof(uint8_t));
   buf[0] = n;
-  struct key_t *key = malloc(sizeof(struct key_t));
+  Key *key = malloc(sizeof(Key));
   key->key_size = 1;
   key->key = buf;
   return key;
 }
 
 /* Construct a single-byte val */
-val_t *get_val(uint8_t n) {
+Val *get_val(uint8_t n) {
   uint8_t *buf = malloc(sizeof(uint8_t));
   buf[0] = n;
-  val_t *val = malloc(sizeof(struct val_t));
+  Val *val = malloc(sizeof(struct Val));
   val->val_size = 1;
   val->val = buf;
   return val;
 }
 
 void test_init() {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
   assert(ht->size == TEST_HT_SIZE);
   assert(ht->item_count == 0);
   for (unsigned int i = 0; i < TEST_HT_SIZE; i++)
@@ -199,23 +199,23 @@ void test_init() {
 }
 
 void test_get_unknown() {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
   assert(hash_table_get(ht, get_key(TEST_KEY)) == 0);
 }
 
 void test_put() {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
-  struct key_t *key = get_key(TEST_KEY);
-  val_t *val = get_val(1);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Key *key = get_key(TEST_KEY);
+  Val *val = get_val(1);
   assert(hash_table_put(ht, key, val) == 0);
   assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
 }
 
 void test_put_overwrite() {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
-  struct key_t *key = get_key(TEST_KEY);
-  val_t *val = get_val(1);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Key *key = get_key(TEST_KEY);
+  Val *val = get_val(1);
   assert(hash_table_put(ht, key, val) == 0);
   val = get_val(2);
   assert(hash_table_put(ht, key, val) == 1);
@@ -224,11 +224,11 @@ void test_put_overwrite() {
 }
 
 void test_put_conflict(void) {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
-  struct key_t *key = get_key(TEST_KEY);
-  struct key_t *other_key = get_key(TEST_OTHER_KEY);
-  val_t *val = get_val(1);
-  val_t *other_val = get_val(2);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Key *key = get_key(TEST_KEY);
+  Key *other_key = get_key(TEST_OTHER_KEY);
+  Val *val = get_val(1);
+  Val *other_val = get_val(2);
   assert(hash_table_put(ht, key, val) == 0);
   assert(hash_table_put(ht, other_key, other_val) == 0);
   assert(cmp_vals(hash_table_get(ht, key), val));
@@ -237,10 +237,10 @@ void test_put_conflict(void) {
 }
 
 void test_delete_not_present(void) {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
-  struct key_t *key = get_key(TEST_KEY);
-  struct key_t *other_key = get_key(TEST_OTHER_KEY);
-  val_t *val = get_val(1);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Key *key = get_key(TEST_KEY);
+  Key *other_key = get_key(TEST_OTHER_KEY);
+  Val *val = get_val(1);
   assert(hash_table_put(ht, key, val) == 0);
   assert(hash_table_delete(ht, other_key));
   assert(cmp_vals(hash_table_get(ht, key), val));
@@ -248,11 +248,11 @@ void test_delete_not_present(void) {
 }
 
 void test_delete(void) {
-  hash_table_t *ht = hash_table_new(TEST_HT_SIZE);
-  struct key_t *key = get_key(TEST_KEY);
-  struct key_t *other_key = get_key(TEST_OTHER_KEY);
-  val_t *val = get_val(1);
-  val_t *other_val = get_val(2);
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Key *key = get_key(TEST_KEY);
+  Key *other_key = get_key(TEST_OTHER_KEY);
+  Val *val = get_val(1);
+  Val *other_val = get_val(2);
   assert(hash_table_put(ht, key, val) == 0);
   assert(hash_table_put(ht, other_key, other_val) == 0);
   assert(ht->item_count == 2);

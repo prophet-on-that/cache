@@ -1,36 +1,36 @@
 #include <stdint.h>
 
-typedef uint8_t key_size_t;
-typedef uint16_t val_size_t;
+typedef uint8_t KeySize;
+typedef uint16_t ValSize;
 
-struct key_t {
-  key_size_t key_size;
+typedef struct Key {
+  KeySize key_size;
   uint8_t *key;
-};
+} Key;
 
-typedef struct val_t {
-  val_size_t val_size;
+typedef struct Val {
+  ValSize val_size;
   uint8_t *val;
-} val_t;
+} Val;
 
-typedef struct list_t {
-  struct list_t *next;
-  struct key_t *key;
-  val_t *val;
-} list_t;
+typedef struct List {
+  struct List *next;
+  Key *key;
+  Val *val;
+} List;
 
-typedef struct hash_table_t {
+typedef struct HashTable {
   unsigned int size;
   unsigned  item_count;
-  list_t **arr;
-} hash_table_t;
+  List **arr;
+} HashTable;
 
-hash_table_t *hash_table_new(unsigned int size);
+HashTable *hash_table_new(unsigned int size);
 
-int hash_table_put(hash_table_t *ht, struct key_t *key, val_t *val);
+int hash_table_put(HashTable *ht, Key *key, Val *val);
 
-val_t *hash_table_get(hash_table_t *ht, struct key_t *key);
+Val *hash_table_get(HashTable *ht, Key *key);
 
-int hash_table_delete(hash_table_t *ht, struct key_t *key);
+int hash_table_delete(HashTable *ht, Key *key);
 
 
