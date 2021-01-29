@@ -9,14 +9,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include <stdio.h>
-
-typedef uint8_t key_size_t;
-typedef uint16_t val_size_t;
-
-struct key_t {
-  key_size_t key_size;
-  uint8_t *key;
-};
+#include "hash_table.h"
 
 /* Create a new key_t by copying the given buffer */
 struct key_t *make_key_t(key_size_t size, uint8_t *buf) {
@@ -33,11 +26,6 @@ void free_key_t(struct key_t *key) {
   free(key);
 }
 
-typedef struct val_t {
-  val_size_t val_size;
-  uint8_t *val;
-} val_t;
-
 /* Create a new val_t by copying the given buffer */
 val_t *make_val_t(val_size_t size, uint8_t *buf) {
   uint8_t *val_buf = malloc(sizeof(uint8_t) * size);
@@ -52,12 +40,6 @@ void free_val_t(val_t *val) {
   free(val->val);
   free(val);
 }
-
-typedef struct list_t {
-  struct list_t *next;
-  struct key_t *key;
-  val_t *val;
-} list_t;
 
 void free_list_t(list_t *elem) {
   free_key_t(elem->key);
@@ -74,12 +56,6 @@ unsigned long hash(struct key_t *key) {
     hash = ((hash << 5) + hash) + key->key[i]; /* hash * 33 + key->key[i] */
   return hash;
 }
-
-typedef struct hash_table_t {
-  unsigned int size;
-  unsigned  item_count;
-  list_t **arr;
-} hash_table_t;
 
 /* Construct a new hash table of fixed size SIZE. */
 hash_table_t *hash_table_new(unsigned int size) {
