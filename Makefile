@@ -1,2 +1,2 @@
-hash_table: hash_table.c
-	gcc -g -W -o $@ $<
+hash_table: hash_table.c conn.c
+	gcc -g -W -o $@ $^
