@@ -56,7 +56,6 @@ size_t recv_msg(Conn *conn, HashTable *ht, size_t buf_size, uint8_t *buf) {
     conn->bytes_received += bytes_read;
     assert(conn->bytes_received <= conn->msg_size);
     if (conn->bytes_received == conn->msg_size) {
-      /* TODO: Parse message and reset conn */
       handle_msg(conn, ht);
       conn->msg_size = 0;
       free(conn->msg_buf);
