@@ -1,4 +1,8 @@
+#ifndef _HASH_TABLE_H
+#define _HASH_TABLE_H
+
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef uint8_t KeySize;
 typedef uint16_t ValSize;
@@ -33,4 +37,8 @@ Val *hash_table_get(HashTable *ht, Key *key);
 
 int hash_table_delete(HashTable *ht, Key *key);
 
+size_t key_size(Key *key);
 
+bool cmp_keys(Key *key, Key *other);
+
+#endif

@@ -26,6 +26,11 @@ void free_key(Key *key) {
   free(key);
 }
 
+/* Return serialised size of a key. */
+size_t key_size(Key *key) {
+  return sizeof(key->key_size) + key->key_size;
+}
+
 /* Create a new Val by copying the given buffer */
 Val *make_val(ValSize size, uint8_t *buf) {
   uint8_t *val_buf = malloc(sizeof(uint8_t) * size);

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "../lib/hash_table.h"
+#include "../lib/message.h"
 
 /**************/
 /* Test utils */
@@ -135,6 +136,21 @@ void test_ht_delete(void) {
   assert(ht->item_count == 0);
 }
 
+/*****************/
+/* message tests */
+/*****************/
+
+void test_msg_serialise_get() {
+  Message msg;
+  msg.message.get.key = get_key(0);
+  msg.type = MessageTypeGet;
+  size_t buf_size;
+  uint8_t *buf = serialise_message(&msg, &buf_size);
+  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  assert(msg_copy->type == MessageTypeGet);
+  assert(cmp_keys(msg_copy->message.get.key, msg.message.get.key));
+}
+
 /********/
 /* Main */
 /********/
@@ -147,6 +163,7 @@ int main(void) {
   register_test(&test_ht_put_conflict);
   register_test(&test_ht_delete_not_present);
   register_test(&test_ht_delete);
+  register_test(&test_msg_serialise_get);
   run_tests();
   return 0;
 }
