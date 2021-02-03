@@ -46,6 +46,11 @@ void free_val(Val *val) {
   free(val);
 }
 
+/* Return serialised size of a val. */
+size_t val_size(Val *val) {
+  return sizeof(val->val_size) + val->val_size;
+}
+
 void free_list(List *elem) {
   free_key(elem->key);
   free_val(elem->val);

@@ -143,12 +143,26 @@ void test_ht_delete(void) {
 void test_msg_serialise_get() {
   Message msg;
   msg.message.get.key = get_key(0);
-  msg.type = MessageTypeGet;
+  msg.type = MESSAGE_TYPE_GET;
   size_t buf_size;
   uint8_t *buf = serialise_message(&msg, &buf_size);
   Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
-  assert(msg_copy->type == MessageTypeGet);
+  assert(msg_copy->type == MESSAGE_TYPE_GET);
   assert(cmp_keys(msg_copy->message.get.key, msg.message.get.key));
+}
+
+void test_msg_serialise_put() {
+  Message msg;
+  msg.message.put.key = get_key(1);
+  msg.message.put.val = get_val(2);
+  msg.type = MESSAGE_TYPE_PUT;
+  size_t buf_size;
+  uint8_t *buf = serialise_message(&msg, &buf_size);
+  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  assert(msg_copy->type == MESSAGE_TYPE_PUT);
+  assert(cmp_keys(msg_copy->message.put.key, msg.message.put.key));
+  assert(msg_copy->message.put.val->val_size == 1);
+  assert(msg_copy->message.put.val->val[0] == 2);
 }
 
 /********/
@@ -164,6 +178,7 @@ int main(void) {
   register_test(&test_ht_delete_not_present);
   register_test(&test_ht_delete);
   register_test(&test_msg_serialise_get);
+  register_test(&test_msg_serialise_put);
   run_tests();
   return 0;
 }

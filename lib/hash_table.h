@@ -39,6 +39,8 @@ int hash_table_delete(HashTable *ht, Key *key);
 
 size_t key_size(Key *key);
 
+size_t val_size(Val *val);
+
 bool cmp_keys(Key *key, Key *other);
 
 #endif

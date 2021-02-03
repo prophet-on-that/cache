@@ -11,8 +11,8 @@ typedef struct MessageGet {
 } MessageGet;
 
 typedef struct MessagePut {
-  Key key;
-  Val val;
+  Key* key;
+  Val* val;
 } MessagePut;
 
 typedef uint8_t MessageType;
@@ -27,8 +27,8 @@ typedef struct Message {
   MessageUnion message;
 } Message;
 
-#define MessageTypeGet 0
-#define MessageTypePut 1
+#define MESSAGE_TYPE_GET 0
+#define MESSAGE_TYPE_PUT 1
 
 uint8_t *serialise_message(Message *msg, size_t *buf_size);
 
