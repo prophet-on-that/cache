@@ -7,12 +7,12 @@
 typedef uint32_t MessageSize;
 
 typedef struct MessageGet {
-  Key *key;
+  Key key;
 } MessageGet;
 
 typedef struct MessagePut {
-  Key* key;
-  Val* val;
+  Key key;
+  Val val;
 } MessagePut;
 
 typedef uint8_t MessageType;

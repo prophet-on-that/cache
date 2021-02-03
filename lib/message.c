@@ -37,19 +37,19 @@ uint8_t *serialise_message(Message *msg, size_t *buf_size) {
   int offset;
   switch (msg->type) {
   case MESSAGE_TYPE_GET:
-    msg_size = key_size(msg->message.get.key) + sizeof(MessageType);
+    msg_size = key_size(&msg->message.get.key) + sizeof(MessageType);
     buf = malloc(msg_size + sizeof(MessageSize));
     offset = write_message_size(buf, msg_size);
     offset += write_message_type(buf + offset, msg->type);
-    write_key(buf + offset, msg->message.get.key);
+    write_key(buf + offset, &msg->message.get.key);
     break;
   case MESSAGE_TYPE_PUT:
-    msg_size = key_size(msg->message.put.key) + val_size(msg->message.put.val) + sizeof(MessageType);
+    msg_size = key_size(&msg->message.put.key) + val_size(&msg->message.put.val) + sizeof(MessageType);
     buf = malloc(msg_size + sizeof(MessageSize));
     offset = write_message_size(buf, msg_size);
     offset += write_message_type(buf + offset, msg->type);
-    offset += write_key(buf + offset, msg->message.put.key);
-    write_val(buf + offset, msg->message.put.val);
+    offset += write_key(buf + offset, &msg->message.put.key);
+    write_val(buf + offset, &msg->message.put.val);
     break;
   default:
     error(-1, 0, "Unrecognised message type: %d", msg->type);
@@ -79,22 +79,14 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
   MessageType msg_type = buf[0];
   int offset = sizeof(MessageType);
   Message *msg = malloc(sizeof(Message));
-  Key *key;
-  Val *val;
   msg->type = msg_type;
   switch (msg_type) {
   case MESSAGE_TYPE_GET:
-    key = malloc(sizeof(Key));
-    deserialise_key(buf + offset, key);
-    msg->message.get.key = key;
+    deserialise_key(buf + offset, &msg->message.get.key);
     break;
   case MESSAGE_TYPE_PUT:
-    key = malloc(sizeof(Key));
-    offset += deserialise_key(buf + offset, key);
-    msg->message.put.key = key;
-    val = malloc(sizeof(Val));
-    deserialise_val(buf + offset, val);
-    msg->message.put.val = val;
+    offset += deserialise_key(buf + offset, &msg->message.put.key);
+    deserialise_val(buf + offset, &msg->message.put.val);
     break;
   default:
     error(0, 0, "Unrecognised message type: %d", msg_type);

@@ -33,23 +33,33 @@ void run_tests() {
 #define TEST_KEY 0
 #define TEST_OTHER_KEY 5
 
-/* Construct a single-byte key */
-Key *get_key(uint8_t n) {
+/* Initialise a single-byte key */
+void init_key(Key *key, uint8_t n) {
   uint8_t *buf = malloc(sizeof(uint8_t));
   buf[0] = n;
-  Key *key = malloc(sizeof(Key));
   key->key_size = 1;
   key->key = buf;
+}
+
+/* Construct a single-byte key */
+Key *get_key(uint8_t n) {
+  Key *key = malloc(sizeof(Key));
+  init_key(key, n);
   return key;
+}
+
+/* Initialise a single-byte val */
+void init_val(Val *val, uint8_t n) {
+  uint8_t *buf = malloc(sizeof(uint8_t));
+  buf[0] = n;
+  val->val_size = 1;
+  val->val = buf;
 }
 
 /* Construct a single-byte val */
 Val *get_val(uint8_t n) {
-  uint8_t *buf = malloc(sizeof(uint8_t));
-  buf[0] = n;
   Val *val = malloc(sizeof(struct Val));
-  val->val_size = 1;
-  val->val = buf;
+  init_val(val, n);
   return val;
 }
 
@@ -142,27 +152,27 @@ void test_ht_delete(void) {
 
 void test_msg_serialise_get() {
   Message msg;
-  msg.message.get.key = get_key(0);
+  init_key(&msg.message.get.key, 0);
   msg.type = MESSAGE_TYPE_GET;
   size_t buf_size;
   uint8_t *buf = serialise_message(&msg, &buf_size);
   Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
   assert(msg_copy->type == MESSAGE_TYPE_GET);
-  assert(cmp_keys(msg_copy->message.get.key, msg.message.get.key));
+  assert(cmp_keys(&msg_copy->message.get.key, &msg.message.get.key));
 }
 
 void test_msg_serialise_put() {
   Message msg;
-  msg.message.put.key = get_key(1);
-  msg.message.put.val = get_val(2);
+  init_key(&msg.message.put.key, 1);
+  init_val(&msg.message.put.val, 2);
   msg.type = MESSAGE_TYPE_PUT;
   size_t buf_size;
   uint8_t *buf = serialise_message(&msg, &buf_size);
   Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
   assert(msg_copy->type == MESSAGE_TYPE_PUT);
-  assert(cmp_keys(msg_copy->message.put.key, msg.message.put.key));
-  assert(msg_copy->message.put.val->val_size == 1);
-  assert(msg_copy->message.put.val->val[0] == 2);
+  assert(cmp_keys(&msg_copy->message.put.key, &msg.message.put.key));
+  assert(msg_copy->message.put.val.val_size == 1);
+  assert(msg_copy->message.put.val.val[0] == 2);
 }
 
 /********/
