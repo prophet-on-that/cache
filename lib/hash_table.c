@@ -119,7 +119,7 @@ int hash_table_put(HashTable *ht, Key *key, Val *val) {
  * data stored in the hash table, so must be copied if modification is
  * needed.
  *
- * Returns 0 if nothing found.
+ * Returns NULL if nothing found.
  */
 Val *hash_table_get(HashTable *ht, Key *key) {
   List **ptr = &ht->arr[hash(key) % ht->size];
@@ -129,7 +129,7 @@ Val *hash_table_get(HashTable *ht, Key *key) {
       return elem->val;
     ptr = &(*ptr)->next;
   }
-  return 0;
+  return NULL;
 }
 
 /*

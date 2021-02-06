@@ -77,7 +77,7 @@ void test_ht_init() {
 
 void test_ht_get_unknown() {
   HashTable *ht = hash_table_new(TEST_HT_SIZE);
-  assert(hash_table_get(ht, get_key(TEST_KEY)) == 0);
+  assert(hash_table_get(ht, get_key(TEST_KEY)) == NULL);
 }
 
 void test_ht_put() {
@@ -136,7 +136,7 @@ void test_ht_delete(void) {
 
   /* Delete key */
   assert(!hash_table_delete(ht, key));
-  assert(!hash_table_get(ht, key));
+  assert(hash_table_get(ht, key) == NULL);
   assert(cmp_vals(hash_table_get(ht, other_key), other_val));
   assert(ht->item_count == 1);
 
