@@ -3,9 +3,10 @@
 #include <stddef.h>
 #include <netinet/in.h>
 #include <stdlib.h>
+#include <error.h>
 #include "hash_table.h"
-
-typedef uint32_t MessageSize;
+#include "message.h"
+#include "conn.h"
 
 /* A client connection */
 typedef struct Conn {
@@ -24,25 +25,33 @@ int min(int a, int b) {
   return a < b ? a : b;
 }
 
-#define MSG_PUT 0
-
-void handle_msg(Conn *conn, HashTable *ht) {
-  Key key;
-  Val val;
-
-  switch(conn->msg_buf[0]) {
-  case MSG_PUT:
-    key.key_size = ntohs(conn->msg_buf[1]);
-    key.key = conn->msg_buf + 1 + sizeof(KeySize);
-    val.val_size = ntohs(conn->msg_buf[1 + sizeof(KeySize) + key.key_size]);
-    val.val = conn->msg_buf + 1 + sizeof(KeySize) + key.key_size + sizeof(ValSize);
-    hash_table_put(ht, &key, &val);
-    /* TODO: send response */
+/* Handle message, returning response message */
+Message *handle_msg(Message *msg, HashTable *ht) {
+  Message *resp = malloc(sizeof(Message));
+  Val *val;
+  switch (msg->type) {
+  case MESSAGE_TYPE_GET:
+    val = hash_table_get(ht, &msg->message.get.key);
+    resp->type = MESSAGE_TYPE_GET_RESP;
+    if (val != NULL) {
+      /* Copy val to resp */
+      resp->message.get_resp.val = malloc(sizeof(Val));
+      resp->message.get_resp.val->val_size = val->val_size;
+      resp->message.get_resp.val->val = malloc(val->val_size);
+      memcpy(resp->message.get_resp.val->val, val->val, val->val_size);
+    } else {
+        resp->message.get_resp.val = NULL;
+    }
     break;
+  /* case MESSAGE_TYPE_PUT: */
+  /*   hash_table_put(ht, &msg->message.put.key, &msg->message.put.val); */
+  /*   /\* TODO: send response *\/ */
+  /*   break; */
   default:
-    /* TODO: send error payload */
-    break;
-  }
+    free(resp);
+    error(-1, 0, "Unhandled message type %d", msg->type);
+  };
+  return resp;
 }
 
 /* Handle incoming data for a client. Returns bytes consumed in
@@ -56,7 +65,8 @@ size_t recv_msg(Conn *conn, HashTable *ht, size_t buf_size, uint8_t *buf) {
     conn->bytes_received += bytes_read;
     assert(conn->bytes_received <= conn->msg_size);
     if (conn->bytes_received == conn->msg_size) {
-      handle_msg(conn, ht);
+      /* handle_msg(conn, ht); */
+      /* TODO */
       conn->msg_size = 0;
       free(conn->msg_buf);
       conn->bytes_received = 0;

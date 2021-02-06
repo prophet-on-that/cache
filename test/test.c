@@ -4,6 +4,7 @@
 #include <string.h>
 #include "../lib/hash_table.h"
 #include "../lib/message.h"
+#include "../lib/conn.h"
 
 /**************/
 /* Test utils */
@@ -175,6 +176,33 @@ void test_msg_serialise_put() {
   assert(msg_copy->message.put.val.val[0] == 2);
 }
 
+/**************/
+/* conn tests */
+/**************/
+
+void test_conn_handle_get() {
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Key *key = get_key(TEST_OTHER_KEY);
+  Val *val = get_val(1);
+  hash_table_put(ht, key, val);
+  Message msg;
+  init_key(&msg.message.get.key, TEST_OTHER_KEY);
+  msg.type = MESSAGE_TYPE_GET;
+  Message *resp = handle_msg(&msg, ht);
+  assert(resp->type == MESSAGE_TYPE_GET_RESP);
+  assert(cmp_vals(val, resp->message.get_resp.val));
+}
+
+void test_conn_handle_get_unknown() {
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Message msg;
+  init_key(&msg.message.get.key, TEST_OTHER_KEY);
+  msg.type = MESSAGE_TYPE_GET;
+  Message *resp = handle_msg(&msg, ht);
+  assert(resp->type == MESSAGE_TYPE_GET_RESP);
+  assert(resp->message.get_resp.val == NULL);
+}
+
 /********/
 /* Main */
 /********/
@@ -189,6 +217,8 @@ int main(void) {
   register_test(&test_ht_delete);
   register_test(&test_msg_serialise_get);
   register_test(&test_msg_serialise_put);
+  register_test(&test_conn_handle_get);
+  register_test(&test_conn_handle_get_unknown);
   run_tests();
   return 0;
 }
