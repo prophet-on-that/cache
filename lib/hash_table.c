@@ -88,9 +88,9 @@ bool cmp_keys(Key *key, Key *other) {
  * Store a value for the given key in a hash table. The key and value
  * pointers are COPIED.
  *
- * Returns 0 if new entry added, 1 if existing entry updated.
+ * Returns FALSE if new entry added, TRUE if existing entry updated.
  */
-int hash_table_put(HashTable *ht, Key *key, Val *val) {
+bool hash_table_put(HashTable *ht, Key *key, Val *val) {
   List **ptr = &ht->arr[hash(key) % ht->size];
   List *elem;
   while (elem = *ptr) {

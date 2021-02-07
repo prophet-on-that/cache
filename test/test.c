@@ -85,7 +85,7 @@ void test_ht_put() {
   HashTable *ht = hash_table_new(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Val *val = get_val(1);
-  assert(hash_table_put(ht, key, val) == 0);
+  assert(hash_table_put(ht, key, val) == false);
   assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
 }
@@ -94,9 +94,9 @@ void test_ht_put_overwrite() {
   HashTable *ht = hash_table_new(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Val *val = get_val(1);
-  assert(hash_table_put(ht, key, val) == 0);
+  assert(hash_table_put(ht, key, val) == false);
   val = get_val(2);
-  assert(hash_table_put(ht, key, val) == 1);
+  assert(hash_table_put(ht, key, val) == true);
   assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
 }
@@ -107,8 +107,8 @@ void test_ht_put_conflict(void) {
   Key *other_key = get_key(TEST_OTHER_KEY);
   Val *val = get_val(1);
   Val *other_val = get_val(2);
-  assert(hash_table_put(ht, key, val) == 0);
-  assert(hash_table_put(ht, other_key, other_val) == 0);
+  assert(hash_table_put(ht, key, val) == false);
+  assert(hash_table_put(ht, other_key, other_val) == false);
   assert(cmp_vals(hash_table_get(ht, key), val));
   assert(cmp_vals(hash_table_get(ht, other_key), other_val));
   assert(ht->item_count == 2);
@@ -119,7 +119,7 @@ void test_ht_delete_not_present(void) {
   Key *key = get_key(TEST_KEY);
   Key *other_key = get_key(TEST_OTHER_KEY);
   Val *val = get_val(1);
-  assert(hash_table_put(ht, key, val) == 0);
+  assert(hash_table_put(ht, key, val) == false);
   assert(hash_table_delete(ht, other_key));
   assert(cmp_vals(hash_table_get(ht, key), val));
   assert(ht->item_count == 1);
@@ -131,8 +131,8 @@ void test_ht_delete(void) {
   Key *other_key = get_key(TEST_OTHER_KEY);
   Val *val = get_val(1);
   Val *other_val = get_val(2);
-  assert(hash_table_put(ht, key, val) == 0);
-  assert(hash_table_put(ht, other_key, other_val) == 0);
+  assert(hash_table_put(ht, key, val) == false);
+  assert(hash_table_put(ht, other_key, other_val) == false);
   assert(ht->item_count == 2);
 
   /* Delete key */

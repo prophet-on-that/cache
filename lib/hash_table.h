@@ -31,7 +31,7 @@ typedef struct HashTable {
 
 HashTable *hash_table_new(unsigned int size);
 
-int hash_table_put(HashTable *ht, Key *key, Val *val);
+bool hash_table_put(HashTable *ht, Key *key, Val *val);
 
 Val *hash_table_get(HashTable *ht, Key *key);
 
