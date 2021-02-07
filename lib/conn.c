@@ -29,6 +29,7 @@ int min(int a, int b) {
 Message *handle_msg(Message *msg, HashTable *ht) {
   Message *resp = malloc(sizeof(Message));
   Val *val;
+  bool is_update;
   switch (msg->type) {
   case MESSAGE_TYPE_GET:
     val = hash_table_get(ht, &msg->message.get.key);
@@ -43,13 +44,14 @@ Message *handle_msg(Message *msg, HashTable *ht) {
         resp->message.get_resp.val = NULL;
     }
     break;
-  /* case MESSAGE_TYPE_PUT: */
-  /*   hash_table_put(ht, &msg->message.put.key, &msg->message.put.val); */
-  /*   /\* TODO: send response *\/ */
-  /*   break; */
+  case MESSAGE_TYPE_PUT:
+    is_update = hash_table_put(ht, &msg->message.put.key, &msg->message.put.val);
+    resp->type = MESSAGE_TYPE_PUT_RESP;
+    resp->message.put_resp.is_update = is_update;
+    break;
   default:
     free(resp);
-    error(-1, 0, "Unhandled message type %d", msg->type);
+    error(0, 0, "Unhandled message type %d", msg->type);
   };
   return resp;
 }

@@ -33,6 +33,8 @@ void run_tests() {
 /* The following two keys conflict when hashed, modulo TEST_HT_SIZE */
 #define TEST_KEY 0
 #define TEST_OTHER_KEY 5
+#define TEST_VAL 2
+#define TEST_OTHER_VAL 17
 
 /* Initialise a single-byte key */
 void init_key(Key *key, uint8_t n) {
@@ -203,6 +205,31 @@ void test_conn_handle_get_unknown() {
   assert(resp->message.get_resp.val == NULL);
 }
 
+void test_conn_handle_put() {
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Message msg;
+  init_key(&msg.message.put.key, TEST_OTHER_KEY);
+  init_val(&msg.message.put.val, TEST_VAL);
+  msg.type = MESSAGE_TYPE_PUT;
+  Message *resp = handle_msg(&msg, ht);
+  assert(resp->type == MESSAGE_TYPE_PUT_RESP);
+  assert(resp->message.put_resp.is_update == false);
+  assert(cmp_vals(hash_table_get(ht, get_key(TEST_OTHER_KEY)), get_val(TEST_VAL)));
+}
+
+void test_conn_handle_put_update() {
+  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  Message msg;
+  init_key(&msg.message.put.key, TEST_OTHER_KEY);
+  hash_table_put(ht, &msg.message.put.key, get_val(TEST_VAL));
+  init_val(&msg.message.put.val, TEST_OTHER_VAL);
+  msg.type = MESSAGE_TYPE_PUT;
+  Message *resp = handle_msg(&msg, ht);
+  assert(resp->type == MESSAGE_TYPE_PUT_RESP);
+  assert(resp->message.put_resp.is_update == true);
+  assert(cmp_vals(hash_table_get(ht, get_key(TEST_OTHER_KEY)), get_val(TEST_OTHER_VAL)));
+}
+
 /********/
 /* Main */
 /********/
@@ -219,6 +246,8 @@ int main(void) {
   register_test(&test_msg_serialise_put);
   register_test(&test_conn_handle_get);
   register_test(&test_conn_handle_get_unknown);
+  register_test(&test_conn_handle_put);
+  register_test(&test_conn_handle_put_update);
   run_tests();
   return 0;
 }
