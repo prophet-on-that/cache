@@ -24,7 +24,7 @@ typedef struct MessagePutResp {
   bool is_update;
 } MessagePutResp;
 
-typedef uint8_t MessageType;
+typedef enum MessageType {GET, PUT, GET_RESP, PUT_RESP} MessageType;
 
 typedef union MessageUnion {
   MessageGet get;
@@ -37,11 +37,6 @@ typedef struct Message {
   MessageType type;
   MessageUnion message;
 } Message;
-
-#define MESSAGE_TYPE_GET 0
-#define MESSAGE_TYPE_PUT 1
-#define MESSAGE_TYPE_GET_RESP 2
-#define MESSAGE_TYPE_PUT_RESP 2
 
 uint8_t *serialise_message(Message *msg, size_t *buf_size);
 

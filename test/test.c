@@ -156,11 +156,11 @@ void test_ht_delete(void) {
 void test_msg_serialise_get() {
   Message msg;
   init_key(&msg.message.get.key, 0);
-  msg.type = MESSAGE_TYPE_GET;
+  msg.type = GET;
   size_t buf_size;
   uint8_t *buf = serialise_message(&msg, &buf_size);
   Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
-  assert(msg_copy->type == MESSAGE_TYPE_GET);
+  assert(msg_copy->type == GET);
   assert(cmp_keys(&msg_copy->message.get.key, &msg.message.get.key));
 }
 
@@ -168,11 +168,11 @@ void test_msg_serialise_put() {
   Message msg;
   init_key(&msg.message.put.key, 1);
   init_val(&msg.message.put.val, 2);
-  msg.type = MESSAGE_TYPE_PUT;
+  msg.type = PUT;
   size_t buf_size;
   uint8_t *buf = serialise_message(&msg, &buf_size);
   Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
-  assert(msg_copy->type == MESSAGE_TYPE_PUT);
+  assert(msg_copy->type == PUT);
   assert(cmp_keys(&msg_copy->message.put.key, &msg.message.put.key));
   assert(msg_copy->message.put.val.val_size == 1);
   assert(msg_copy->message.put.val.val[0] == 2);
@@ -189,9 +189,9 @@ void test_conn_handle_get() {
   hash_table_put(ht, key, val);
   Message msg;
   init_key(&msg.message.get.key, TEST_KEY);
-  msg.type = MESSAGE_TYPE_GET;
+  msg.type = GET;
   Message *resp = handle_msg(&msg, ht);
-  assert(resp->type == MESSAGE_TYPE_GET_RESP);
+  assert(resp->type == GET_RESP);
   assert(cmp_vals(val, resp->message.get_resp.val));
 }
 
@@ -199,9 +199,9 @@ void test_conn_handle_get_unknown() {
   HashTable *ht = hash_table_new(TEST_HT_SIZE);
   Message msg;
   init_key(&msg.message.get.key, TEST_KEY);
-  msg.type = MESSAGE_TYPE_GET;
+  msg.type = GET;
   Message *resp = handle_msg(&msg, ht);
-  assert(resp->type == MESSAGE_TYPE_GET_RESP);
+  assert(resp->type == GET_RESP);
   assert(resp->message.get_resp.val == NULL);
 }
 
@@ -210,9 +210,9 @@ void test_conn_handle_put() {
   Message msg;
   init_key(&msg.message.put.key, TEST_KEY);
   init_val(&msg.message.put.val, TEST_VAL);
-  msg.type = MESSAGE_TYPE_PUT;
+  msg.type = PUT;
   Message *resp = handle_msg(&msg, ht);
-  assert(resp->type == MESSAGE_TYPE_PUT_RESP);
+  assert(resp->type == PUT_RESP);
   assert(resp->message.put_resp.is_update == false);
   assert(cmp_vals(hash_table_get(ht, get_key(TEST_KEY)), get_val(TEST_VAL)));
 }
@@ -223,9 +223,9 @@ void test_conn_handle_put_update() {
   init_key(&msg.message.put.key, TEST_KEY);
   hash_table_put(ht, &msg.message.put.key, get_val(TEST_VAL));
   init_val(&msg.message.put.val, TEST_OTHER_VAL);
-  msg.type = MESSAGE_TYPE_PUT;
+  msg.type = PUT;
   Message *resp = handle_msg(&msg, ht);
-  assert(resp->type == MESSAGE_TYPE_PUT_RESP);
+  assert(resp->type == PUT_RESP);
   assert(resp->message.put_resp.is_update == true);
   assert(cmp_vals(hash_table_get(ht, get_key(TEST_KEY)), get_val(TEST_OTHER_VAL)));
 }

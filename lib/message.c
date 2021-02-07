@@ -36,14 +36,14 @@ uint8_t *serialise_message(Message *msg, size_t *buf_size) {
   uint8_t *buf;
   int offset;
   switch (msg->type) {
-  case MESSAGE_TYPE_GET:
+  case GET:
     msg_size = key_size(&msg->message.get.key) + sizeof(MessageType);
     buf = malloc(msg_size + sizeof(MessageSize));
     offset = write_message_size(buf, msg_size);
     offset += write_message_type(buf + offset, msg->type);
     write_key(buf + offset, &msg->message.get.key);
     break;
-  case MESSAGE_TYPE_PUT:
+  case PUT:
     msg_size = key_size(&msg->message.put.key) + val_size(&msg->message.put.val) + sizeof(MessageType);
     buf = malloc(msg_size + sizeof(MessageSize));
     offset = write_message_size(buf, msg_size);
@@ -81,10 +81,10 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
   Message *msg = malloc(sizeof(Message));
   msg->type = msg_type;
   switch (msg_type) {
-  case MESSAGE_TYPE_GET:
+  case GET:
     deserialise_key(buf + offset, &msg->message.get.key);
     break;
-  case MESSAGE_TYPE_PUT:
+  case PUT:
     offset += deserialise_key(buf + offset, &msg->message.put.key);
     deserialise_val(buf + offset, &msg->message.put.val);
     break;

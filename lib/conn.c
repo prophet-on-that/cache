@@ -31,9 +31,9 @@ Message *handle_msg(Message *msg, HashTable *ht) {
   Val *val;
   bool is_update;
   switch (msg->type) {
-  case MESSAGE_TYPE_GET:
+  case GET:
     val = hash_table_get(ht, &msg->message.get.key);
-    resp->type = MESSAGE_TYPE_GET_RESP;
+    resp->type = GET_RESP;
     if (val != NULL) {
       /* Copy val to resp */
       resp->message.get_resp.val = malloc(sizeof(Val));
@@ -44,9 +44,9 @@ Message *handle_msg(Message *msg, HashTable *ht) {
         resp->message.get_resp.val = NULL;
     }
     break;
-  case MESSAGE_TYPE_PUT:
+  case PUT:
     is_update = hash_table_put(ht, &msg->message.put.key, &msg->message.put.val);
-    resp->type = MESSAGE_TYPE_PUT_RESP;
+    resp->type = PUT_RESP;
     resp->message.put_resp.is_update = is_update;
     break;
   default:
