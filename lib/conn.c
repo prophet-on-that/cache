@@ -86,3 +86,21 @@ recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read) {
   }
   return msg;
 }
+
+int send_all(int sockfd, uint8_t *buf, size_t *len) {
+  size_t total = 0; // how many bytes we've sent
+  size_t bytesleft = *len; // how many we have left to send
+  int n;
+
+  while(total < *len) {
+    n = send(sockfd, buf + total, bytesleft, 0);
+    if (n == -1)
+      break;
+    total += n;
+    bytesleft -= n;
+  }
+
+  *len = total; // return number actually sent here
+
+  return n == -1 ? -1 : 0; // return -1 on failure, 0 on success
+}
