@@ -8,13 +8,6 @@
 #include "message.h"
 #include "conn.h"
 
-/* A client connection */
-typedef struct Conn {
-  MessageSize msg_size;
-  uint8_t *msg_buf;
-  size_t bytes_received;      /* Running count of buffer allocated */
-} Conn;
-
 void init_conn(Conn *conn) {
   conn->msg_size = 0;
   conn->msg_buf = NULL;
@@ -56,21 +49,22 @@ Message *handle_msg(Message *msg, HashTable *ht) {
   return resp;
 }
 
-/* Handle incoming data for a client. Returns bytes consumed in
-   buffer. */
-size_t recv_msg(Conn *conn, HashTable *ht, size_t buf_size, uint8_t *buf) {
-  size_t outstanding_bytes, bytes_read;
+/* TODO: test */
+Message *
+recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read) {
+  size_t outstanding_bytes;
+  Message *msg = NULL;
   if (conn->msg_size) {
     outstanding_bytes = conn->msg_size - conn->bytes_received;
-    bytes_read = min(buf_size, outstanding_bytes);
-    memcpy(conn->msg_buf + conn->bytes_received, buf, bytes_read);
-    conn->bytes_received += bytes_read;
+    *bytes_read = min(buf_size, outstanding_bytes);
+    memcpy(conn->msg_buf + conn->bytes_received, buf, *bytes_read);
+    conn->bytes_received += *bytes_read;
     assert(conn->bytes_received <= conn->msg_size);
     if (conn->bytes_received == conn->msg_size) {
-      /* handle_msg(conn, ht); */
-      /* TODO */
+      msg = deserialise_message(conn->msg_buf, conn->msg_size);
       conn->msg_size = 0;
       free(conn->msg_buf);
+      conn->msg_buf = NULL;
       conn->bytes_received = 0;
     }
   } else {
@@ -80,9 +74,9 @@ size_t recv_msg(Conn *conn, HashTable *ht, size_t buf_size, uint8_t *buf) {
     /* This logic handles where less than sizeof(MessageSize) bytes is
        received by storing partial bytes in the buffer. */
     outstanding_bytes = sizeof(MessageSize) - conn->bytes_received;
-    bytes_read = min(buf_size, outstanding_bytes);
-    memcpy(conn->msg_buf + conn->bytes_received, buf, bytes_read);
-    conn->bytes_received += bytes_read;
+    *bytes_read = min(buf_size, outstanding_bytes);
+    memcpy(conn->msg_buf + conn->bytes_received, buf, *bytes_read);
+    conn->bytes_received += *bytes_read;
     assert(conn->bytes_received <= sizeof(MessageSize));
     if (conn->bytes_received == sizeof(MessageSize)) {
       conn->msg_size = ntohl((uint32_t)conn->msg_buf[0]);
@@ -90,5 +84,5 @@ size_t recv_msg(Conn *conn, HashTable *ht, size_t buf_size, uint8_t *buf) {
       conn->bytes_received = 0;
     }
   }
-  return bytes_read;
+  return msg;
 }

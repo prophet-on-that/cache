@@ -91,6 +91,7 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
   default:
     error(0, 0, "Unrecognised message type: %d", msg_type);
     free(msg);
+    msg = NULL;
     break;
   };
   return msg;
