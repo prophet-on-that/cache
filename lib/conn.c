@@ -79,7 +79,7 @@ recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read) {
     conn->bytes_received += *bytes_read;
     assert(conn->bytes_received <= sizeof(MessageSize));
     if (conn->bytes_received == sizeof(MessageSize)) {
-      conn->msg_size = ntohl((uint32_t)conn->msg_buf[0]);
+      conn->msg_size = ntohl(((uint32_t *)conn->msg_buf)[0]);
       conn->msg_buf = realloc(conn->msg_buf, conn->msg_size);
       conn->bytes_received = 0;
     }

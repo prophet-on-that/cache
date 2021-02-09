@@ -166,7 +166,7 @@ int main(void)
             perror("accept");
           } else {
             /* TODO: grow CONNS */
-            init_conn(conns + fd_count);
+            init_conn(conns + fd_count - 1);
             add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
 
             printf("pollserver: new connection from %s on "
