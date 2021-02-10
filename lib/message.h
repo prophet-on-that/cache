@@ -24,7 +24,14 @@ typedef struct MessagePutResp {
   bool is_update;
 } MessagePutResp;
 
-typedef enum MessageType {GET, PUT, GET_RESP, PUT_RESP} MessageType;
+enum MessageType {
+  GET,
+  PUT,
+  GET_RESP,
+  PUT_RESP
+} __attribute__ ((__packed__));
+
+typedef enum MessageType MessageType;
 
 typedef union MessageUnion {
   MessageGet get;
