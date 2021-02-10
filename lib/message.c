@@ -29,34 +29,41 @@ int write_val(uint8_t *buf, Val *val) {
   return val->val_size + sizeof(ValSize);
 }
 
+MessageSize get_message_size(Message *msg) {
+  MessageSize s;
+  switch (msg->type) {
+  case GET:
+    s = key_size(&msg->message.get.key);
+    break;
+  case PUT:
+    s = key_size(&msg->message.put.key) + val_size(&msg->message.put.val);
+    break;
+  case GET_RESP:
+    s = msg->message.get_resp.val != NULL ? val_size(msg->message.get_resp.val) : 0;
+    break;
+  default:
+    error(-1, 0, "Unrecognised message type: %d", msg->type);
+  }
+  return s + sizeof(MessageType);
+}
+
 /* Allocate buffer to serialise a message in network byte order,
    prepending message size. Stores buffer size in BUF_SIZE. */
 uint8_t *serialise_message(Message *msg, size_t *buf_size) {
-  MessageSize msg_size;
-  uint8_t *buf;
-  int offset;
+  MessageSize msg_size = get_message_size(msg);
+  uint8_t *buf = malloc(msg_size + sizeof(MessageSize));
+  int offset = write_message_size(buf, msg_size);
+  offset += write_message_type(buf + offset, msg->type);
   switch (msg->type) {
   case GET:
-    msg_size = key_size(&msg->message.get.key) + sizeof(MessageType);
-    buf = malloc(msg_size + sizeof(MessageSize));
-    offset = write_message_size(buf, msg_size);
-    offset += write_message_type(buf + offset, msg->type);
     write_key(buf + offset, &msg->message.get.key);
     break;
   case PUT:
-    msg_size = key_size(&msg->message.put.key) + val_size(&msg->message.put.val) + sizeof(MessageType);
-    buf = malloc(msg_size + sizeof(MessageSize));
-    offset = write_message_size(buf, msg_size);
-    offset += write_message_type(buf + offset, msg->type);
     offset += write_key(buf + offset, &msg->message.put.key);
     write_val(buf + offset, &msg->message.put.val);
     break;
   case GET_RESP:
     /* If VAL is NULL, write nothing */
-    msg_size = (msg->message.get_resp.val != NULL ? val_size(msg->message.get_resp.val) : 0) + sizeof(MessageType);
-    buf = malloc(msg_size + sizeof(MessageSize));
-    offset = write_message_size(buf, msg_size);
-    offset += write_message_type(buf + offset, msg->type);
     if (msg->message.get_resp.val != NULL)
       write_val(buf + offset, msg->message.get_resp.val);
     break;
