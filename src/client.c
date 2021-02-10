@@ -30,7 +30,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int main(int argc, char *argv[])
 {
-	int sockfd, numbytes;
+	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 	int rv;
 	char s[INET6_ADDRSTRLEN];
@@ -88,14 +88,41 @@ int main(int argc, char *argv[])
     perror("send_all");
   };
   free(buf);
-  free(msg);                    /* TODO: need to properly free msg */
+  free_message(msg);
 
   /* TODO: receive response */
 
-	/* if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) { */
-	/*     perror("recv"); */
-	/*     exit(1); */
-	/* } */
+  size_t MAX_BUF_SIZE = 128;
+  uint8_t recv_buf[MAX_BUF_SIZE];
+  int recv_bytes;
+  size_t processed_bytes;
+  Conn conn;
+  for (;;) {
+    if ((recv_bytes = recv(sockfd, recv_buf, MAX_BUF_SIZE, 0)) == -1) {
+	    perror("recv");
+	    exit(1);
+    }
+    uint8_t *buf_pos = recv_buf;
+    for (;;) {
+      Message *msg = recv_msg(&conn, recv_bytes, buf_pos, &processed_bytes);
+      if (msg) {
+        if (msg->type == GET_RESP) {
+          Val *val = msg->message.get_resp.val;
+          if (val) {
+            printf("Value: ");
+            fwrite(val->val, 1, val->val_size, stdout);
+            printf("\n");
+          } else
+            printf("Value not found\n");
+        } else
+          printf("Unexpected message type: %d\n", msg->type);
+        exit(0);
+      }
+      buf_pos += processed_bytes;
+      if (buf_pos >= recv_buf + recv_bytes)
+        break;                  /* Continue waiting */
+    }
+  }
 
 	/* buf[numbytes] = '\0'; */
 
