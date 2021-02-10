@@ -49,4 +49,7 @@ uint8_t *serialise_message(Message *msg, size_t *buf_size);
 
 Message *deserialise_message(uint8_t *buf, size_t buf_size);
 
+void
+free_message(Message *msg);
+
 #endif

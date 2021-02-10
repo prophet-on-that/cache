@@ -119,3 +119,9 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
   };
   return msg;
 }
+
+void
+free_message(Message *msg) {
+  /* TODO */
+  free(msg);
+};
