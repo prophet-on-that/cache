@@ -51,6 +51,15 @@ uint8_t *serialise_message(Message *msg, size_t *buf_size) {
     offset += write_key(buf + offset, &msg->message.put.key);
     write_val(buf + offset, &msg->message.put.val);
     break;
+  case GET_RESP:
+    /* If VAL is NULL, write nothing */
+    msg_size = (msg->message.get_resp.val != NULL ? val_size(msg->message.get_resp.val) : 0) + sizeof(MessageType);
+    buf = malloc(msg_size + sizeof(MessageSize));
+    offset = write_message_size(buf, msg_size);
+    offset += write_message_type(buf + offset, msg->type);
+    if (msg->message.get_resp.val != NULL)
+      write_val(buf + offset, msg->message.get_resp.val);
+    break;
   default:
     error(-1, 0, "Unrecognised message type: %d", msg->type);
   };
@@ -77,7 +86,7 @@ int deserialise_val(uint8_t *buf, Val *val) {
 /* Deserialise a message (excluding MessageSize header) */
 Message *deserialise_message(uint8_t *buf, size_t buf_size) {
   MessageType msg_type = buf[0];
-  int offset = sizeof(MessageType);
+  size_t offset = sizeof(MessageType);
   Message *msg = malloc(sizeof(Message));
   msg->type = msg_type;
   switch (msg_type) {
@@ -87,6 +96,13 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
   case PUT:
     offset += deserialise_key(buf + offset, &msg->message.put.key);
     deserialise_val(buf + offset, &msg->message.put.val);
+    break;
+  case GET_RESP:
+    if (offset < buf_size) {
+      msg->message.get_resp.val = malloc(sizeof(Val));
+      deserialise_val(buf + offset, msg->message.get_resp.val);
+    } else
+      msg->message.get_resp.val = NULL;
     break;
   default:
     error(0, 0, "Unrecognised message type: %d", msg_type);

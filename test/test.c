@@ -178,6 +178,31 @@ void test_msg_serialise_put() {
   assert(msg_copy->message.put.val.val[0] == 2);
 }
 
+void test_msg_serialise_get_resp() {
+  Message msg;
+  msg.message.get_resp.val = malloc(sizeof(Val));
+  init_val(msg.message.get_resp.val, 2);
+  msg.type = GET_RESP;
+  size_t buf_size;
+  uint8_t *buf = serialise_message(&msg, &buf_size);
+  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  assert(msg_copy->type == GET_RESP);
+  assert(cmp_vals(msg_copy->message.get_resp.val, msg.message.get_resp.val));
+  assert(msg_copy->message.get_resp.val->val_size == 1);
+  assert(msg_copy->message.get_resp.val->val[0] == 2);
+}
+
+void test_msg_serialise_get_resp_null() {
+  Message msg;
+  msg.message.get_resp.val = NULL;
+  msg.type = GET_RESP;
+  size_t buf_size;
+  uint8_t *buf = serialise_message(&msg, &buf_size);
+  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  assert(msg_copy->type == GET_RESP);
+  assert(msg_copy->message.get_resp.val == NULL);
+}
+
 /**************/
 /* conn tests */
 /**************/
@@ -244,6 +269,8 @@ int main(void) {
   register_test(&test_ht_delete);
   register_test(&test_msg_serialise_get);
   register_test(&test_msg_serialise_put);
+  register_test(&test_msg_serialise_get_resp);
+  register_test(&test_msg_serialise_get_resp_null);
   register_test(&test_conn_handle_get);
   register_test(&test_conn_handle_get_unknown);
   register_test(&test_conn_handle_put);
