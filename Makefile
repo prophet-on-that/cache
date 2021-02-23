@@ -22,7 +22,7 @@ $(BIN-DIR): | $(BUILD-DIR)
 	mkdir -p $@
 
 $(BIN-DIR)/server: $(SRC-DIR)/server.c $(LIB-SRC) | $(BIN-DIR)
-	gcc -g -W -o $@ $(filter %.c,$^)
+	gcc -g -W -Wformat -o $@ $(filter %.c,$^)
 
 $(BIN-DIR)/client: $(SRC-DIR)/client.c $(LIB-SRC) | $(BIN-DIR)
-	gcc -g -W -o $@ $(filter %.c,$^)
+	gcc -g -W -Wformat -o $@ $(filter %.c,$^)
