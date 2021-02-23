@@ -43,4 +43,8 @@ size_t val_size(Val *val);
 
 bool cmp_keys(Key *key, Key *other);
 
+void free_key(Key *key);
+
+void free_val(Val *val);
+
 #endif
