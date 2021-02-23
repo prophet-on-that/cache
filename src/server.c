@@ -209,9 +209,9 @@ int main(void)
                   if (send_all(sender_fd, resp_buf, &resp_buf_size))
                     perror("send_all");
                   free(resp_buf);
-                  free(resp);
+                  free_message(resp);
                 }
-                free(msg);
+                free_message(msg);
               }
               buf_pos += bytes_read;
               if (buf_pos >= buf + nbytes)
