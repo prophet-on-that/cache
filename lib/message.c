@@ -41,6 +41,9 @@ MessageSize get_message_size(Message *msg) {
   case GET_RESP:
     s = msg->message.get_resp.val != NULL ? val_size(msg->message.get_resp.val) : 0;
     break;
+  case PUT_RESP:
+    s = 1;
+    break;
   default:
     error(-1, 0, "Unrecognised message type: %d", msg->type);
   }
@@ -66,6 +69,9 @@ uint8_t *serialise_message(Message *msg, size_t *buf_size) {
     /* If VAL is NULL, write nothing */
     if (msg->message.get_resp.val != NULL)
       write_val(buf + offset, msg->message.get_resp.val);
+    break;
+  case PUT_RESP:
+    buf[offset] = msg->message.put_resp.is_update;
     break;
   default:
     error(-1, 0, "Unrecognised message type: %d", msg->type);
@@ -110,6 +116,9 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
       deserialise_val(buf + offset, msg->message.get_resp.val);
     } else
       msg->message.get_resp.val = NULL;
+    break;
+  case PUT_RESP:
+    msg->message.put_resp.is_update = buf[offset];
     break;
   default:
     error(0, 0, "Unrecognised message type: %d", msg_type);
