@@ -18,6 +18,34 @@
 
 #define PORT "9034" // the port client will be connecting to
 
+Message *receive_msg(int sockfd) {
+  size_t buf_size = 128;
+  uint8_t *recv_buf = malloc(buf_size);
+  Conn conn;
+  init_conn(&conn);
+  int recv_bytes;
+  size_t processed_bytes;
+  Message *msg = NULL;
+  for (;;) {
+    if ((recv_bytes = recv(sockfd, recv_buf, buf_size, 0)) == -1) {
+	    perror("recv");
+      goto cleanup;
+    }
+    uint8_t *buf_pos = recv_buf;
+    for (;;) {
+      msg = recv_msg(&conn, recv_bytes, buf_pos, &processed_bytes);
+      if (msg)
+        goto cleanup;
+      buf_pos += processed_bytes;
+      if (buf_pos >= recv_buf + recv_bytes)
+        break;                  /* Wait on further messages from the network */
+    }
+  }
+ cleanup:
+  free(recv_buf);
+  return msg;
+}
+
 // get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa)
 {
@@ -26,6 +54,134 @@ void *get_in_addr(struct sockaddr *sa)
 	}
 
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+Key *read_key() {
+  char *buf = NULL;
+  size_t buf_size = 0;
+  Key *key = NULL;
+  int key_size;
+
+  printf("key> ");
+  key_size = getline(&buf, &buf_size, stdin);
+  /* TODO: check for too long key */
+  if (key_size < 0) {
+      perror("read_key");
+  } else if (key_size - 1 == 0) {
+      printf("Zero-length key invalid\n");
+  } else {
+    key = malloc(sizeof(Key));
+    key->key_size = (KeySize)key_size - 1;
+    key->key = malloc(key_size - 1);
+    memcpy(key->key, buf, key_size - 1);
+  }
+  free(buf);
+  return key;
+}
+
+Val *read_val() {
+  char *buf = NULL;
+  size_t buf_size = 0;
+  Val *val = NULL;
+  int val_size;
+
+  printf("val> ");
+  val_size = getline(&buf, &buf_size, stdin);
+  /* TODO: check for too long val */
+  if (val_size < 0) {
+      perror("read_val");
+  } else if (val_size - 1 == 0) {
+      printf("Zero-length val invalid\n");
+  } else {
+    val = malloc(sizeof(Val));
+    val->val_size = (ValSize)val_size - 1;
+    val->val = malloc(val_size - 1);
+    memcpy(val->val, buf, val_size - 1);
+  }
+  free(buf);
+  return val;
+}
+
+void handle_get(int sockfd, Key *key) {
+  Message *msg;
+  size_t buf_size;
+  uint8_t *buf;
+  Val *val;
+  bool error = false;
+
+  /* Send message */
+  msg = malloc(sizeof(Message));
+  msg->type = GET;
+  msg->message.get.key.key_size = key->key_size;
+  msg->message.get.key.key = key->key;
+  buf = serialise_message(msg, &buf_size);
+  if (send_all(sockfd, buf, &buf_size)) {
+    perror("handle_get:sendall");
+    error = true;
+  };
+  free(buf);
+  free_message(msg);
+
+  if (error)
+    return;
+
+  /* Receive response */
+  msg = receive_msg(sockfd);
+  if (msg) {
+    if (msg->type == GET_RESP) {
+      val = msg->message.get_resp.val;
+      if (val) {
+        printf("Value: ");
+        fwrite(val->val, 1, val->val_size, stdout);
+        printf("\n");
+      } else
+        printf("Value not found\n");
+    } else
+      printf("Unexpected message type: %d\n", msg->type);
+  } else
+    printf("Error receiving message\n");
+
+  free_message(msg);
+}
+
+void handle_put(int sockfd, Key *key, Val *val) {
+  Message *msg;
+  size_t buf_size;
+  uint8_t *buf;
+  bool error = false;
+
+  /* Send message */
+  msg = malloc(sizeof(Message));
+  msg->type = PUT;
+  msg->message.put.key.key_size = key->key_size;
+  msg->message.put.key.key = key->key;
+  msg->message.put.val.val_size = val->val_size;
+  msg->message.put.val.val = val->val;
+  buf = serialise_message(msg, &buf_size);
+  if (send_all(sockfd, buf, &buf_size)) {
+    perror("handle_get:sendall");
+    error = true;
+  };
+  free(buf);
+  free_message(msg);
+
+  if (error)
+    return;
+
+  /* Receive response */
+  msg = receive_msg(sockfd);
+  if (msg) {
+    if (msg->type == PUT_RESP) {
+      if (msg->message.put_resp.is_update)
+        printf("Value updated\n");
+      else
+        printf("Value added\n");
+    } else
+      printf("Unexpected message type: %d\n", msg->type);
+  } else
+    printf("Error receiving message\n");
+
+  free_message(msg);
 }
 
 int main(int argc, char *argv[])
@@ -77,56 +233,42 @@ int main(int argc, char *argv[])
 
 	freeaddrinfo(servinfo); // all done with this structure
 
-  Message *msg = malloc(sizeof(Message));
-  msg->type = GET;
-  msg->message.get.key.key_size = 1;
-  msg->message.get.key.key = malloc(1);
-  msg->message.get.key.key[0] = 4;
-  size_t buf_size;
-  uint8_t *buf = serialise_message(msg, &buf_size);
-  if (send_all(sockfd, buf, &buf_size)) {
-    perror("send_all");
-  };
-  free(buf);
-  free_message(msg);
-
-  /* TODO: receive response */
-
-  size_t MAX_BUF_SIZE = 128;
-  uint8_t recv_buf[MAX_BUF_SIZE];
-  int recv_bytes;
-  size_t processed_bytes;
-  Conn conn;
   for (;;) {
-    if ((recv_bytes = recv(sockfd, recv_buf, MAX_BUF_SIZE, 0)) == -1) {
-	    perror("recv");
-	    exit(1);
+    printf("get/put> ");
+
+    char *cmd = NULL;
+    size_t cmd_buf_size = 0;
+    int cmd_size = getline(&cmd, &cmd_buf_size, stdin);
+    Key *key;
+    Val *val;
+    size_t key_buf_size, val_buf_size;
+    if (cmd_size == -1) {
+      perror("getline");
+      exit(1);
     }
-    uint8_t *buf_pos = recv_buf;
-    for (;;) {
-      Message *msg = recv_msg(&conn, recv_bytes, buf_pos, &processed_bytes);
-      if (msg) {
-        if (msg->type == GET_RESP) {
-          Val *val = msg->message.get_resp.val;
-          if (val) {
-            printf("Value: ");
-            fwrite(val->val, 1, val->val_size, stdout);
-            printf("\n");
-          } else
-            printf("Value not found\n");
-        } else
-          printf("Unexpected message type: %d\n", msg->type);
-        exit(0);
-      }
-      buf_pos += processed_bytes;
-      if (buf_pos >= recv_buf + recv_bytes)
-        break;                  /* Continue waiting */
-    }
+    cmd[cmd_size - 1] = '\0';   /* Replace newline */
+    if (!strcmp(cmd, "get")) {
+      /* Handle get */
+      key = read_key();
+      if (!key)
+        continue;
+      handle_get(sockfd, key);
+      free_key(key);
+    } else if (!strcmp(cmd, "put")) {
+      /* Handle put */
+      key = read_key();
+      if (!key)
+        continue;
+      val = read_val();
+      if (!val)
+        continue;
+      handle_put(sockfd, key, val);
+      free_key(key);
+      free_val(val);
+    } else
+      printf("Unrecognised command\n");
+    free(cmd);
   }
-
-	/* buf[numbytes] = '\0'; */
-
-	/* printf("client: received '%s'\n",buf); */
 
 	close(sockfd);
 
