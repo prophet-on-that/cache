@@ -95,6 +95,14 @@ void add_to_pfds(struct pollfd *pfds[], int newfd, int *fd_count, int *fd_size)
   (*fd_count)++;
 }
 
+void add_to_conns(Conn **conns, size_t *conns_size, unsigned int conn_count) {
+  if (conn_count == *conns_size) {
+    *conns_size *= 2;
+    *conns = realloc(*conns, sizeof(Conn) * *conns_size);
+  }
+  init_conn(*conns + conn_count);
+}
+
 // Remove an index from the set
 void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
 {
@@ -102,6 +110,11 @@ void del_from_pfds(struct pollfd pfds[], int i, int *fd_count)
   pfds[i] = pfds[*fd_count-1];
 
   (*fd_count)--;
+}
+
+void del_from_conns(Conn *conns, int i, unsigned int conn_count) {
+  /* Copy end conn over this one */
+  conns[i] = conns[conn_count - 1];
 }
 
 // Main
@@ -122,7 +135,8 @@ int main(void)
   int fd_count = 0;
   int fd_size = 5;
   struct pollfd *pfds = malloc(sizeof *pfds * fd_size);
-  Conn *conns = malloc(sizeof(Conn) * (fd_size - 1));
+  size_t conns_size = fd_size - 1;
+  Conn *conns = malloc(sizeof(Conn) * conns_size);
   HashTable *ht = hash_table_new(128); /* TODO: update size */
 
   // Set up and get a listening socket
@@ -165,8 +179,7 @@ int main(void)
           if (newfd == -1) {
             perror("accept");
           } else {
-            /* TODO: grow CONNS */
-            init_conn(conns + fd_count - 1);
+            add_to_conns(&conns, &conns_size, fd_count - 1);
             add_to_pfds(&pfds, newfd, &fd_count, &fd_size);
 
             printf("pollserver: new connection from %s on "
@@ -193,9 +206,8 @@ int main(void)
 
             close(pfds[i].fd); // Bye!
 
-            /* TODO: deal with CONNS */
+            del_from_conns(conns, i - 1, fd_count - 1);
             del_from_pfds(pfds, i, &fd_count);
-
           } else {
             size_t bytes_read;
             uint8_t *buf_pos = buf;
