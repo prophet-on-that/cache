@@ -131,6 +131,17 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
 
 void
 free_message(Message *msg) {
-  /* TODO */
+  switch(msg->type) {
+  case GET:
+    free(msg->message.get.key.key);
+    break;
+  case PUT:
+    free(msg->message.put.key.key);
+    free(msg->message.put.val.val);
+    break;
+  case GET_RESP:
+    free_val(msg->message.get_resp.val);
+    break;
+  }
   free(msg);
 };
