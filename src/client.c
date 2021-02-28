@@ -18,7 +18,7 @@
 
 #define PORT "9034" // the port client will be connecting to
 
-Message *receive_msg(int sockfd) {
+Message *out_receive_msg(int sockfd) {
   size_t buf_size = 128;
   uint8_t *recv_buf = malloc(buf_size);
   Conn conn;
@@ -56,7 +56,7 @@ void *get_in_addr(struct sockaddr *sa)
 	return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-Key *read_key() {
+Key *out_read_key() {
   char *buf = NULL;
   size_t buf_size = 0;
   Key *key = NULL;
@@ -66,7 +66,7 @@ Key *read_key() {
   key_size = getline(&buf, &buf_size, stdin);
   /* TODO: check for too long key */
   if (key_size < 0) {
-      perror("read_key");
+      perror("out_read_key");
   } else if (key_size - 1 == 0) {
       printf("Zero-length key invalid\n");
   } else {
@@ -79,7 +79,7 @@ Key *read_key() {
   return key;
 }
 
-Val *read_val() {
+Val *out_read_val() {
   char *buf = NULL;
   size_t buf_size = 0;
   Val *val = NULL;
@@ -89,7 +89,7 @@ Val *read_val() {
   val_size = getline(&buf, &buf_size, stdin);
   /* TODO: check for too long val */
   if (val_size < 0) {
-      perror("read_val");
+      perror("out_read_val");
   } else if (val_size - 1 == 0) {
       printf("Zero-length val invalid\n");
   } else {
@@ -114,6 +114,8 @@ void handle_get(int sockfd, Key *take_key) {
   msg->type = GET;
   msg->message.get.key.key_size = take_key->key_size;
   msg->message.get.key.key = take_key->key;
+  free(take_key);
+
   buf = out_serialise_message(msg, &buf_size);
   if (send_all(sockfd, buf, &buf_size)) {
     perror("handle_get:sendall");
@@ -126,7 +128,7 @@ void handle_get(int sockfd, Key *take_key) {
     return;
 
   /* Receive response */
-  msg = receive_msg(sockfd);
+  msg = out_receive_msg(sockfd);
   if (msg) {
     if (msg->type == GET_RESP) {
       val = msg->message.get_resp.val;
@@ -157,6 +159,8 @@ void handle_put(int sockfd, Key *take_key, Val *take_val) {
   msg->message.put.key.key = take_key->key;
   msg->message.put.val.val_size = take_val->val_size;
   msg->message.put.val.val = take_val->val;
+  free(take_key);
+  free(take_val);
   buf = out_serialise_message(msg, &buf_size);
   if (send_all(sockfd, buf, &buf_size)) {
     perror("handle_get:sendall");
@@ -169,7 +173,7 @@ void handle_put(int sockfd, Key *take_key, Val *take_val) {
     return;
 
   /* Receive response */
-  msg = receive_msg(sockfd);
+  msg = out_receive_msg(sockfd);
   if (msg) {
     if (msg->type == PUT_RESP) {
       if (msg->message.put_resp.is_update)
@@ -249,17 +253,17 @@ int main(int argc, char *argv[])
     cmd[cmd_size - 1] = '\0';   /* Replace newline */
     if (!strcmp(cmd, "get")) {
       /* Handle get */
-      key = read_key();
+      key = out_read_key();
       if (!key)
         continue;
       handle_get(sockfd, key);
       /* KEY now invalid */
     } else if (!strcmp(cmd, "put")) {
       /* Handle put */
-      key = read_key();
+      key = out_read_key();
       if (!key)
         continue;
-      val = read_val();
+      val = out_read_val();
       if (!val)
         continue;
       handle_put(sockfd, key, val);
