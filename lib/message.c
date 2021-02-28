@@ -133,10 +133,13 @@ void
 free_message(Message *msg) {
   switch(msg->type) {
   case GET:
-    free(msg->message.get.key.key);
+    if(msg->message.get.key.key != NULL)
+      free(msg->message.get.key.key);
     break;
   case PUT:
-    free(msg->message.put.key.key);
+    if (msg->message.put.key.key != NULL)
+      free(msg->message.put.key.key);
+    if (msg->message.put.val.val != NULL)
     free(msg->message.put.val.val);
     break;
   case GET_RESP:

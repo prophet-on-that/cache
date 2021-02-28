@@ -102,7 +102,7 @@ Val *read_val() {
   return val;
 }
 
-void handle_get(int sockfd, Key *key) {
+void handle_get(int sockfd, Key *take_key) {
   Message *msg;
   size_t buf_size;
   uint8_t *buf;
@@ -112,8 +112,8 @@ void handle_get(int sockfd, Key *key) {
   /* Send message */
   msg = malloc(sizeof(Message));
   msg->type = GET;
-  msg->message.get.key.key_size = key->key_size;
-  msg->message.get.key.key = key->key;
+  msg->message.get.key.key_size = take_key->key_size;
+  msg->message.get.key.key = take_key->key;
   buf = serialise_message(msg, &buf_size);
   if (send_all(sockfd, buf, &buf_size)) {
     perror("handle_get:sendall");
@@ -144,7 +144,7 @@ void handle_get(int sockfd, Key *key) {
   free_message(msg);
 }
 
-void handle_put(int sockfd, Key *key, Val *val) {
+void handle_put(int sockfd, Key *take_key, Val *take_val) {
   Message *msg;
   size_t buf_size;
   uint8_t *buf;
@@ -153,10 +153,10 @@ void handle_put(int sockfd, Key *key, Val *val) {
   /* Send message */
   msg = malloc(sizeof(Message));
   msg->type = PUT;
-  msg->message.put.key.key_size = key->key_size;
-  msg->message.put.key.key = key->key;
-  msg->message.put.val.val_size = val->val_size;
-  msg->message.put.val.val = val->val;
+  msg->message.put.key.key_size = take_key->key_size;
+  msg->message.put.key.key = take_key->key;
+  msg->message.put.val.val_size = take_val->val_size;
+  msg->message.put.val.val = take_val->val;
   buf = serialise_message(msg, &buf_size);
   if (send_all(sockfd, buf, &buf_size)) {
     perror("handle_get:sendall");
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
       if (!key)
         continue;
       handle_get(sockfd, key);
-      free_key(key);
+      /* KEY now invalid */
     } else if (!strcmp(cmd, "put")) {
       /* Handle put */
       key = read_key();
@@ -263,8 +263,7 @@ int main(int argc, char *argv[])
       if (!val)
         continue;
       handle_put(sockfd, key, val);
-      free_key(key);
-      free_val(val);
+      /* KEY and VAL now invalid */
     } else
       printf("Unrecognised command\n");
     free(cmd);
