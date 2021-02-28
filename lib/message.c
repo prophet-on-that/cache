@@ -140,10 +140,11 @@ free_message(Message *take_msg) {
     if (take_msg->message.put.key.key != NULL)
       free(take_msg->message.put.key.key);
     if (take_msg->message.put.val.val != NULL)
-    free(take_msg->message.put.val.val);
+      free(take_msg->message.put.val.val);
     break;
   case GET_RESP:
-    free_val(take_msg->message.get_resp.val);
+    if (take_msg->message.get_resp.val != NULL)
+      free_val(take_msg->message.get_resp.val);
     break;
   }
   free(take_msg);
