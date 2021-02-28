@@ -137,7 +137,7 @@ int main(void)
   struct pollfd *pfds = malloc(sizeof *pfds * fd_size);
   size_t conns_size = fd_size - 1;
   Conn *conns = malloc(sizeof(Conn) * conns_size);
-  HashTable *ht = hash_table_new(128); /* TODO: update size */
+  HashTable *ht = create_hash_table(128); /* TODO: update size */
 
   // Set up and get a listening socket
   listener = get_listener_socket();

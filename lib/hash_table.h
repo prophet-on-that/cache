@@ -29,7 +29,7 @@ typedef struct HashTable {
   List **arr;
 } HashTable;
 
-HashTable *hash_table_new(unsigned int size);
+HashTable *create_hash_table(unsigned int size);
 
 bool hash_table_put(HashTable *ht, Key *key, Val *val);
 

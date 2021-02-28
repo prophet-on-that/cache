@@ -12,7 +12,7 @@
 #include "hash_table.h"
 
 /* Create a new Key by copying the given buffer */
-Key *make_key(KeySize size, uint8_t *buf) {
+Key *create_key(KeySize size, uint8_t *buf) {
   uint8_t *key_buf = malloc(sizeof(uint8_t) * size);
   memcpy(key_buf, buf, size);
   Key *key = malloc(sizeof(Key));
@@ -21,9 +21,9 @@ Key *make_key(KeySize size, uint8_t *buf) {
   return key;
 }
 
-void free_key(Key *key) {
-  free(key->key);
-  free(key);
+void free_key(Key *take_key) {
+  free(take_key->key);
+  free(take_key);
 }
 
 /* Return serialised size of a key. */
@@ -32,7 +32,7 @@ size_t key_size(Key *key) {
 }
 
 /* Create a new Val by copying the given buffer */
-Val *make_val(ValSize size, uint8_t *buf) {
+Val *create_val(ValSize size, uint8_t *buf) {
   uint8_t *val_buf = malloc(sizeof(uint8_t) * size);
   memcpy(val_buf, buf, size);
   Val *val = malloc(sizeof(Val));
@@ -41,9 +41,9 @@ Val *make_val(ValSize size, uint8_t *buf) {
   return val;
 }
 
-void free_val(Val *val) {
-  free(val->val);
-  free(val);
+void free_val(Val *take_val) {
+  free(take_val->val);
+  free(take_val);
 }
 
 /* Return serialised size of a val. */
@@ -51,10 +51,10 @@ size_t val_size(Val *val) {
   return sizeof(val->val_size) + val->val_size;
 }
 
-void free_list(List *elem) {
-  free_key(elem->key);
-  free_val(elem->val);
-  free(elem);
+void free_list(List *take_elem) {
+  free_key(take_elem->key);
+  free_val(take_elem->val);
+  free(take_elem);
 }
 
 /*
@@ -68,7 +68,7 @@ unsigned long hash(Key *key) {
 }
 
 /* Construct a new hash table of fixed size SIZE. */
-HashTable *hash_table_new(unsigned int size) {
+HashTable *create_hash_table(unsigned int size) {
   List **arr = malloc(sizeof(List *) * size);
   assert(arr != 0);
   memset(arr, 0, size);
@@ -98,7 +98,7 @@ bool hash_table_put(HashTable *ht, Key *key, Val *val) {
       /* Update existing elem */
       /* Free existing key if different instance from current */
       free_val(elem->val);
-      elem->val = make_val(val->val_size, val->val);
+      elem->val = create_val(val->val_size, val->val);
       return 1;
     }
     ptr = &(*ptr)->next;
@@ -107,8 +107,8 @@ bool hash_table_put(HashTable *ht, Key *key, Val *val) {
   elem = malloc(sizeof(List));
   assert(elem != 0);
   elem->next = 0;
-  elem->key = make_key(key->key_size, key->key);
-  elem->val = make_val(val->val_size, val->val);
+  elem->key = create_key(key->key_size, key->key);
+  elem->val = create_val(val->val_size, val->val);
   *ptr = elem;
   ++ht->item_count;
   return 0;

@@ -71,7 +71,7 @@ bool cmp_vals(struct Val *val, struct Val *other) {
 }
 
 void test_ht_init() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   assert(ht->size == TEST_HT_SIZE);
   assert(ht->item_count == 0);
   for (unsigned int i = 0; i < TEST_HT_SIZE; i++)
@@ -79,12 +79,12 @@ void test_ht_init() {
 }
 
 void test_ht_get_unknown() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   assert(hash_table_get(ht, get_key(TEST_KEY)) == NULL);
 }
 
 void test_ht_put() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Val *val = get_val(1);
   assert(hash_table_put(ht, key, val) == false);
@@ -93,7 +93,7 @@ void test_ht_put() {
 }
 
 void test_ht_put_overwrite() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Val *val = get_val(1);
   assert(hash_table_put(ht, key, val) == false);
@@ -104,7 +104,7 @@ void test_ht_put_overwrite() {
 }
 
 void test_ht_put_conflict(void) {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Key *other_key = get_key(TEST_OTHER_KEY);
   Val *val = get_val(1);
@@ -117,7 +117,7 @@ void test_ht_put_conflict(void) {
 }
 
 void test_ht_delete_not_present(void) {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Key *other_key = get_key(TEST_OTHER_KEY);
   Val *val = get_val(1);
@@ -128,7 +128,7 @@ void test_ht_delete_not_present(void) {
 }
 
 void test_ht_delete(void) {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Key *other_key = get_key(TEST_OTHER_KEY);
   Val *val = get_val(1);
@@ -208,7 +208,7 @@ void test_msg_serialise_get_resp_null() {
 /**************/
 
 void test_conn_handle_get() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Key *key = get_key(TEST_KEY);
   Val *val = get_val(1);
   hash_table_put(ht, key, val);
@@ -221,7 +221,7 @@ void test_conn_handle_get() {
 }
 
 void test_conn_handle_get_unknown() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Message msg;
   init_key(&msg.message.get.key, TEST_KEY);
   msg.type = GET;
@@ -231,7 +231,7 @@ void test_conn_handle_get_unknown() {
 }
 
 void test_conn_handle_put() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Message msg;
   init_key(&msg.message.put.key, TEST_KEY);
   init_val(&msg.message.put.val, TEST_VAL);
@@ -243,7 +243,7 @@ void test_conn_handle_put() {
 }
 
 void test_conn_handle_put_update() {
-  HashTable *ht = hash_table_new(TEST_HT_SIZE);
+  HashTable *ht = create_hash_table(TEST_HT_SIZE);
   Message msg;
   init_key(&msg.message.put.key, TEST_KEY);
   hash_table_put(ht, &msg.message.put.key, get_val(TEST_VAL));
