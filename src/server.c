@@ -1,7 +1,3 @@
-/*
-** pollserver.c -- a cheezy multiperson chat server
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -233,7 +229,7 @@ int main(void)
         } // END handle data from client
       } // END got ready-to-read from poll()
     } // END looping through file descriptors
-  } // END for(;;)--and you thought it would never end!
+  } // END for(;;)
 
   return 0;
 }
