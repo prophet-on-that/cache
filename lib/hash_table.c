@@ -15,7 +15,7 @@
 Key *make_key(KeySize size, uint8_t *buf) {
   uint8_t *key_buf = malloc(sizeof(uint8_t) * size);
   memcpy(key_buf, buf, size);
-  Key *key = malloc(sizeof(Key *));
+  Key *key = malloc(sizeof(Key));
   key->key_size = size;
   key->key = key_buf;
   return key;
@@ -35,7 +35,7 @@ size_t key_size(Key *key) {
 Val *make_val(ValSize size, uint8_t *buf) {
   uint8_t *val_buf = malloc(sizeof(uint8_t) * size);
   memcpy(val_buf, buf, size);
-  Val *val = malloc(sizeof(Val *));
+  Val *val = malloc(sizeof(Val));
   val->val_size = size;
   val->val = val_buf;
   return val;
