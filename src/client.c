@@ -33,7 +33,7 @@ Message *receive_msg(int sockfd) {
     }
     uint8_t *buf_pos = recv_buf;
     for (;;) {
-      msg = recv_msg(&conn, recv_bytes, buf_pos, &processed_bytes);
+      msg = out_recv_msg(&conn, recv_bytes, buf_pos, &processed_bytes);
       if (msg)
         goto cleanup;
       buf_pos += processed_bytes;
@@ -114,7 +114,7 @@ void handle_get(int sockfd, Key *take_key) {
   msg->type = GET;
   msg->message.get.key.key_size = take_key->key_size;
   msg->message.get.key.key = take_key->key;
-  buf = serialise_message(msg, &buf_size);
+  buf = out_serialise_message(msg, &buf_size);
   if (send_all(sockfd, buf, &buf_size)) {
     perror("handle_get:sendall");
     error = true;
@@ -157,7 +157,7 @@ void handle_put(int sockfd, Key *take_key, Val *take_val) {
   msg->message.put.key.key = take_key->key;
   msg->message.put.val.val_size = take_val->val_size;
   msg->message.put.val.val = take_val->val;
-  buf = serialise_message(msg, &buf_size);
+  buf = out_serialise_message(msg, &buf_size);
   if (send_all(sockfd, buf, &buf_size)) {
     perror("handle_get:sendall");
     error = true;

@@ -52,7 +52,7 @@ MessageSize get_message_size(Message *msg) {
 
 /* Allocate buffer to serialise a message in network byte order,
    prepending message size. Stores buffer size in BUF_SIZE. */
-uint8_t *serialise_message(Message *msg, size_t *buf_size) {
+uint8_t *out_serialise_message(Message *msg, size_t *buf_size) {
   MessageSize msg_size = get_message_size(msg);
   uint8_t *buf = malloc(msg_size + sizeof(MessageSize));
   int offset = write_message_size(buf, msg_size);
@@ -97,7 +97,7 @@ int deserialise_val(uint8_t *buf, Val *val) {
 }
 
 /* Deserialise a message (excluding MessageSize header) */
-Message *deserialise_message(uint8_t *buf, size_t buf_size) {
+Message *out_deserialise_message(uint8_t *buf, size_t buf_size) {
   MessageType msg_type = buf[0];
   size_t offset = sizeof(MessageType);
   Message *msg = malloc(sizeof(Message));
@@ -130,21 +130,21 @@ Message *deserialise_message(uint8_t *buf, size_t buf_size) {
 }
 
 void
-free_message(Message *msg) {
-  switch(msg->type) {
+free_message(Message *take_msg) {
+  switch(take_msg->type) {
   case GET:
-    if(msg->message.get.key.key != NULL)
-      free(msg->message.get.key.key);
+    if(take_msg->message.get.key.key != NULL)
+      free(take_msg->message.get.key.key);
     break;
   case PUT:
-    if (msg->message.put.key.key != NULL)
-      free(msg->message.put.key.key);
-    if (msg->message.put.val.val != NULL)
-    free(msg->message.put.val.val);
+    if (take_msg->message.put.key.key != NULL)
+      free(take_msg->message.put.key.key);
+    if (take_msg->message.put.val.val != NULL)
+    free(take_msg->message.put.val.val);
     break;
   case GET_RESP:
-    free_val(msg->message.get_resp.val);
+    free_val(take_msg->message.get_resp.val);
     break;
   }
-  free(msg);
+  free(take_msg);
 };

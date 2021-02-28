@@ -212,12 +212,12 @@ int main(void)
             size_t bytes_read;
             uint8_t *buf_pos = buf;
             for (;;) {
-              Message *msg = recv_msg(conns + i - 1, nbytes, buf_pos, &bytes_read);
+              Message *msg = out_recv_msg(conns + i - 1, nbytes, buf_pos, &bytes_read);
               if (msg) {
-                Message *resp = handle_msg(msg, ht);
+                Message *resp = out_handle_msg(msg, ht);
                 if (resp) {
                   size_t resp_buf_size;
-                  uint8_t *resp_buf = serialise_message(resp, &resp_buf_size);
+                  uint8_t *resp_buf = out_serialise_message(resp, &resp_buf_size);
                   if (send_all(sender_fd, resp_buf, &resp_buf_size))
                     perror("send_all");
                   free(resp_buf);

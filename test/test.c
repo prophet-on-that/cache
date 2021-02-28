@@ -158,8 +158,8 @@ void test_msg_serialise_get() {
   init_key(&msg.message.get.key, 0);
   msg.type = GET;
   size_t buf_size;
-  uint8_t *buf = serialise_message(&msg, &buf_size);
-  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  uint8_t *buf = out_serialise_message(&msg, &buf_size);
+  Message *msg_copy = out_deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
   assert(msg_copy->type == GET);
   assert(cmp_keys(&msg_copy->message.get.key, &msg.message.get.key));
 }
@@ -170,8 +170,8 @@ void test_msg_serialise_put() {
   init_val(&msg.message.put.val, 2);
   msg.type = PUT;
   size_t buf_size;
-  uint8_t *buf = serialise_message(&msg, &buf_size);
-  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  uint8_t *buf = out_serialise_message(&msg, &buf_size);
+  Message *msg_copy = out_deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
   assert(msg_copy->type == PUT);
   assert(cmp_keys(&msg_copy->message.put.key, &msg.message.put.key));
   assert(msg_copy->message.put.val.val_size == 1);
@@ -184,8 +184,8 @@ void test_msg_serialise_get_resp() {
   init_val(msg.message.get_resp.val, 2);
   msg.type = GET_RESP;
   size_t buf_size;
-  uint8_t *buf = serialise_message(&msg, &buf_size);
-  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  uint8_t *buf = out_serialise_message(&msg, &buf_size);
+  Message *msg_copy = out_deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
   assert(msg_copy->type == GET_RESP);
   assert(cmp_vals(msg_copy->message.get_resp.val, msg.message.get_resp.val));
   assert(msg_copy->message.get_resp.val->val_size == 1);
@@ -197,8 +197,8 @@ void test_msg_serialise_get_resp_null() {
   msg.message.get_resp.val = NULL;
   msg.type = GET_RESP;
   size_t buf_size;
-  uint8_t *buf = serialise_message(&msg, &buf_size);
-  Message *msg_copy = deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
+  uint8_t *buf = out_serialise_message(&msg, &buf_size);
+  Message *msg_copy = out_deserialise_message(buf + sizeof(MessageSize), buf_size - sizeof(MessageSize));
   assert(msg_copy->type == GET_RESP);
   assert(msg_copy->message.get_resp.val == NULL);
 }
@@ -215,7 +215,7 @@ void test_conn_handle_get() {
   Message msg;
   init_key(&msg.message.get.key, TEST_KEY);
   msg.type = GET;
-  Message *resp = handle_msg(&msg, ht);
+  Message *resp = out_handle_msg(&msg, ht);
   assert(resp->type == GET_RESP);
   assert(cmp_vals(val, resp->message.get_resp.val));
 }
@@ -225,7 +225,7 @@ void test_conn_handle_get_unknown() {
   Message msg;
   init_key(&msg.message.get.key, TEST_KEY);
   msg.type = GET;
-  Message *resp = handle_msg(&msg, ht);
+  Message *resp = out_handle_msg(&msg, ht);
   assert(resp->type == GET_RESP);
   assert(resp->message.get_resp.val == NULL);
 }
@@ -236,7 +236,7 @@ void test_conn_handle_put() {
   init_key(&msg.message.put.key, TEST_KEY);
   init_val(&msg.message.put.val, TEST_VAL);
   msg.type = PUT;
-  Message *resp = handle_msg(&msg, ht);
+  Message *resp = out_handle_msg(&msg, ht);
   assert(resp->type == PUT_RESP);
   assert(resp->message.put_resp.is_update == false);
   assert(cmp_vals(hash_table_get(ht, get_key(TEST_KEY)), get_val(TEST_VAL)));
@@ -249,7 +249,7 @@ void test_conn_handle_put_update() {
   hash_table_put(ht, &msg.message.put.key, get_val(TEST_VAL));
   init_val(&msg.message.put.val, TEST_OTHER_VAL);
   msg.type = PUT;
-  Message *resp = handle_msg(&msg, ht);
+  Message *resp = out_handle_msg(&msg, ht);
   assert(resp->type == PUT_RESP);
   assert(resp->message.put_resp.is_update == true);
   assert(cmp_vals(hash_table_get(ht, get_key(TEST_KEY)), get_val(TEST_OTHER_VAL)));

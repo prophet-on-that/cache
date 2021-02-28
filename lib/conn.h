@@ -16,10 +16,10 @@ init_conn(Conn *conn);
 
 /* Handle message, returning response message */
 Message *
-handle_msg(Message *msg, HashTable *ht);
+out_handle_msg(Message *msg, HashTable *ht);
 
 Message *
-recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read);
+out_recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read);
 
 int
 send_all(int socketfd, uint8_t *buf, size_t *len);

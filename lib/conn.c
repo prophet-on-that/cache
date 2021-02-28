@@ -19,7 +19,7 @@ int min(int a, int b) {
 }
 
 /* Handle message, returning response message */
-Message *handle_msg(Message *msg, HashTable *ht) {
+Message *out_handle_msg(Message *msg, HashTable *ht) {
   Message *resp = malloc(sizeof(Message));
   Val *val;
   bool is_update;
@@ -49,9 +49,11 @@ Message *handle_msg(Message *msg, HashTable *ht) {
   return resp;
 }
 
+/* Consume bytes from the network and deserialise into message,
+   handling partial input */
 /* TODO: test */
 Message *
-recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read) {
+out_recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read) {
   size_t outstanding_bytes;
   Message *msg = NULL;
   if (conn->msg_size) {
@@ -61,7 +63,7 @@ recv_msg(Conn *conn, size_t buf_size, uint8_t *buf, size_t *bytes_read) {
     conn->bytes_received += *bytes_read;
     assert(conn->bytes_received <= conn->msg_size);
     if (conn->bytes_received == conn->msg_size) {
-      msg = deserialise_message(conn->msg_buf, conn->msg_size);
+      msg = out_deserialise_message(conn->msg_buf, conn->msg_size);
       conn->msg_size = 0;
       free(conn->msg_buf);
       conn->msg_buf = NULL;
